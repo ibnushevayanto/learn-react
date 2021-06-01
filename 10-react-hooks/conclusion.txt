@@ -1,0 +1,20 @@
+useEffect
+
+useEffect(() => {
+    dijalankan setiap komponen di render ulang
+})
+
+useEffect(() => {
+    dijalankan saat komponen pertama kali di render 
+}, [])
+
+useEffect(() => {
+    dijalankan setiap dependencies berubah
+}, [Dependencies])
+
+useEffect(() => {
+    return () => {
+        dijalankan setiap komponen di hancurkan
+    }
+})
+
