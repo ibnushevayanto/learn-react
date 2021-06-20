@@ -8,7 +8,10 @@ const cartContext = React.createContext({
 });
 
 const cartReducer = (state, action) => {
-  const indexItem = state.items.findIndex((res) => res.id === action.item.id);
+  let indexItem;
+  if (action.type !== "RESET") {
+    indexItem = state.items.findIndex((res) => res.id === action.item.id);
+  }
   if (action.type === "ADD_ITEM") {
     const items = [...state.items];
     if (indexItem >= 0) {
@@ -30,6 +33,11 @@ const cartReducer = (state, action) => {
     }
 
     return { items, totalAmount };
+  } else if (action.type === "RESET") {
+    return {
+      items: [],
+      totalAmount: 0,
+    };
   } else {
     return state;
   }
@@ -47,12 +55,16 @@ export const CartContextProvider = (props) => {
   const removeItemHandler = useCallback((item) => {
     dispatchCartState({ type: "REMOVE_ITEM", item });
   }, []);
+  const clearItemHandler = () => {
+    dispatchCartState({ type: "RESET" });
+  };
 
   const valueContext = {
     items: cartState.items,
     totalAmount: cartState.totalAmount,
     addItem: addItemHandler,
     removeItem: removeItemHandler,
+    clearItem: clearItemHandler,
   };
 
   return (
