@@ -15,7 +15,7 @@ const AddQuote = () => {
   };
 
   return (
-    <section>
+    <section> 
       <QuoteForm onAddQuote={addQuoteHandler} />
     </section>
   );
