@@ -1,26 +1,56 @@
 import MeetupList from "../components/meetups/MeetupList";
+import { MongoClient } from "mongodb";
+import Head from "next/head";
 
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "A First Meetup",
-    image:
-      "https://images.unsplash.com/photo-1642945857774-15b323312d00?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHx0b3BpYy1mZWVkfDY3fHJuU0tESHd3WVVrfHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-    address: "Perumahan Taman Walet",
-    description: "Meetup Guys, Bareng Artis Tik Tok",
-  },
-];
-
+//  * Cara SSG
 export async function getStaticProps() {
+  const client = await MongoClient.connect(
+    "mongodb://<username>:<password>@<name_cluster>-shard-00-00.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-01.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-02.mkmjb.mongodb.net:27017/<db_name>?ssl=true&replicaSet=atlas-zap81e-shard-0&authSource=admin&retryWrites=true&w=majority"
+  );
+
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+  const meetups = await meetupsCollection.find().toArray();
+  client.close();
   // * fetch data from api
-  // * Semua kode disini akan dijalankan di sisi server
   return {
     props: {
-      meetups: DUMMY_MEETUPS,
+      meetups: meetups.map((meetup) => {
+        const data = {
+          ...meetup,
+          id: meetup._id.toString(),
+        };
+        delete data._id;
+        return data;
+      }),
     },
+    revalidate: 1,
   };
 }
 
+// * Cara SSR
+// export async function getServerSideProps(context) {
+//   // * fetch data from api
+//   return {
+//     props: {
+//       meetups: DUMMY_MEETUPS,
+//     },
+//   };
+// }
+
+/**
+ * Jika membutuhkan data yang sering berubah ubah, gunakan SSR
+ * Jika tidak terlalu sering berubah, gunakan SSG
+ */
+
 export default function IndexPage({ meetups }) {
-  return <MeetupList meetups={meetups} />;
+  return (
+    <>
+      <Head>
+        <title>Meetup App</title>
+        <meta name="description" content="This Is A Very Usefull Meetup App" />
+      </Head>
+      <MeetupList meetups={meetups} />
+    </>
+  );
 }

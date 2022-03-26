@@ -1,34 +1,63 @@
 import Image from "next/image";
-import { useRouter } from "next/router";
+import { MongoClient, ObjectId } from "mongodb";
+import Head from "next/head";
 
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "A First Meetup",
-    image:
-      "https://images.unsplash.com/photo-1642945857774-15b323312d00?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHx0b3BpYy1mZWVkfDY3fHJuU0tESHd3WVVrfHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-    address: "Perumahan Taman Walet",
-    description: "Meetup Guys, Bareng Artis Tik Tok",
-  },
-];
+export async function getStaticPaths() {
+  const client = await MongoClient.connect(
+    "mongodb://<username>:<password>@<name_cluster>-shard-00-00.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-01.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-02.mkmjb.mongodb.net:27017/<db_name>?ssl=true&replicaSet=atlas-zap81e-shard-0&authSource=admin&retryWrites=true&w=majority"
+  );
 
-export default function DetailMeetupPage() {
-  const { query } = useRouter();
-  const data = DUMMY_MEETUPS.find((res) => res.id === query.idMeetup);
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+  const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray();
+  client.close();
 
-  return (
+  return {
+    fallback: 'blocking',
+    paths: meetups.map((res) => ({ params: { idMeetup: res._id.toString() } })),
+  };
+}
+
+export async function getStaticProps({ params }) {
+  const client = await MongoClient.connect(
+    "mongodb://<username>:<password>@<name_cluster>-shard-00-00.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-01.mkmjb.mongodb.net:27017,<name_cluster>-shard-00-02.mkmjb.mongodb.net:27017/<db_name>?ssl=true&replicaSet=atlas-zap81e-shard-0&authSource=admin&retryWrites=true&w=majority"
+  );
+
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+  const selectedMeetup = await meetupsCollection.findOne({
+    _id: ObjectId(params.idMeetup),
+  });
+  client.close();
+  const meetupsData = { ...selectedMeetup };
+  delete meetupsData._id;
+
+  return {
+    props: {
+      meetupsData,
+    },
+  };
+}
+
+export default function DetailMeetupPage({ meetupsData }) {
+  return meetupsData ? (
     <>
+      <Head>
+        <title>{meetupsData.title}</title>
+      </Head>
       <div className="image">
         <Image
-          src={data.image}
+          src={meetupsData.image}
           objectFit="cover"
           layout="fill"
-          alt={data.title}
+          alt={meetupsData.title}
         />
       </div>
-      <h1>{data.title}</h1>
-      <address>{data.address}</address>
-      <p>{data.description}</p>
+      <h1>{meetupsData.title}</h1>
+      <address>{meetupsData.address}</address>
+      <p>{meetupsData.description}</p>
     </>
+  ) : (
+    <div>Not Found</div>
   );
 }
